@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>コグニティブ・サーキット — 使い方</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #050510;
+    --bg2: #080820;
+    --cyan: #00f5ff;
+    --cyan-dim: rgba(0,245,255,0.15);
+    --cyan-glow: rgba(0,245,255,0.4);
+    --magenta: #ff00aa;
+    --mag-dim: rgba(255,0,170,0.15);
+    --yellow: #ffe600;
+    --green: #00ff88;
+    --text: #c8d8e8;
+    --text-dim: #6080a0;
+    --mono: 'Share Tech Mono', monospace;
+    --body: 'Noto Sans JP', sans-serif;
+    --title: 'Orbitron', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-weight: 300;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* noise grain */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0.5;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+    position: relative;
+    text-align: center;
+  }
+
+  .hero-circuit-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .hero-circuit-bg svg {
+    width: 100%;
+    height: 100%;
+    opacity: 0.12;
+  }
+
+  .hero-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--cyan);
+    border: 1px solid var(--cyan-glow);
+    padding: 6px 18px;
+    margin-bottom: 32px;
+    animation: pulse-border 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 8px var(--cyan-glow); }
+    50% { box-shadow: 0 0 20px var(--cyan-glow), 0 0 40px var(--cyan-dim); }
+  }
+
+  .hero-title {
+    font-family: var(--title);
+    font-size: clamp(28px, 6vw, 64px);
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    line-height: 1.1;
+    color: #fff;
+    text-shadow: 0 0 30px var(--cyan-glow), 0 0 60px var(--cyan-dim);
+    margin-bottom: 12px;
+  }
+
+  .hero-title span {
+    color: var(--cyan);
+    display: inline;
+  }
+
+  .hero-sub {
+    font-family: var(--mono);
+    font-size: clamp(13px, 2vw, 16px);
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 48px;
+  }
+
+  .hero-desc {
+    max-width: 560px;
+    font-size: 15px;
+    color: var(--text);
+    line-height: 2;
+    margin-bottom: 48px;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--bg);
+    background: var(--cyan);
+    padding: 14px 40px;
+    text-decoration: none;
+    position: relative;
+    transition: all 0.2s;
+    box-shadow: 0 0 20px var(--cyan-glow), 0 0 40px var(--cyan-dim);
+  }
+
+  .cta-btn:hover {
+    background: #fff;
+    box-shadow: 0 0 40px var(--cyan), 0 0 80px var(--cyan-glow);
+    transform: translateY(-2px);
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--text-dim);
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(6px); }
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 80px 24px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--cyan);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--cyan-glow), transparent);
+  }
+
+  .section-title {
+    font-family: var(--title);
+    font-size: clamp(20px, 4vw, 32px);
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 32px;
+    line-height: 1.3;
+  }
+
+  /* ── WHAT IS ── */
+  .what-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    margin-top: 32px;
+  }
+
+  @media (max-width: 600px) {
+    .what-grid { grid-template-columns: 1fr; }
+  }
+
+  .what-card {
+    background: var(--bg2);
+    border: 1px solid rgba(0,245,255,0.1);
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .what-card:hover {
+    border-color: var(--cyan-glow);
+  }
+
+  .what-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan);
+  }
+
+  .what-card-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .what-card-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--cyan);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .what-card-body {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  /* ── PARTS ── */
+  .parts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 32px;
+  }
+
+  .part-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 2fr;
+    align-items: center;
+    gap: 0;
+    background: var(--bg2);
+    border: 1px solid rgba(0,245,255,0.08);
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .part-row:hover {
+    border-color: rgba(0,245,255,0.3);
+    transform: translateX(4px);
+  }
+
+  .part-icon-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 70px;
+    font-size: 24px;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .part-icon-cell.battery { background: rgba(0,255,136,0.08); }
+  .part-icon-cell.bulb { background: rgba(255,230,0,0.08); }
+  .part-icon-cell.node { background: rgba(0,245,255,0.08); }
+  .part-icon-cell.resist { background: rgba(255,0,170,0.08); }
+
+  .part-name-cell {
+    padding: 0 16px;
+    border-left: 1px solid rgba(0,245,255,0.1);
+    border-right: 1px solid rgba(0,245,255,0.1);
+    height: 70px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .part-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .part-name.battery { color: var(--green); }
+  .part-name.bulb { color: var(--yellow); }
+  .part-name.node { color: var(--cyan); }
+  .part-name.resist { color: var(--magenta); }
+
+  .part-desc-cell {
+    padding: 0 16px;
+    min-height: 70px;
+    height: auto;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 700px) {
+    .part-row {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .part-icon-cell {
+      height: 52px;
+      width: 100%;
+      font-size: 22px;
+    }
+
+    .part-name-cell {
+      border-left: none;
+      border-right: none;
+      border-top: 1px solid rgba(0,245,255,0.1);
+      border-bottom: 1px solid rgba(0,245,255,0.06);
+      height: auto;
+      padding: 8px 16px;
+    }
+
+    .part-desc-cell {
+      padding: 10px 16px 14px;
+      min-height: unset;
+      height: auto;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+  }
+
+  /* ── STEPS ── */
+  .steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 32px;
+    position: relative;
+  }
+
+  .steps-list::before {
+    content: '';
+    position: absolute;
+    left: 28px;
+    top: 40px;
+    bottom: 40px;
+    width: 1px;
+    background: linear-gradient(180deg, var(--cyan), var(--magenta));
+    box-shadow: 0 0 8px var(--cyan-glow);
+  }
+
+  .step-item {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    padding: 24px 0;
+    position: relative;
+  }
+
+  .step-num {
+    width: 56px;
+    height: 56px;
+    background: var(--bg2);
+    border: 2px solid var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--title);
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--cyan);
+    flex-shrink: 0;
+    box-shadow: 0 0 16px var(--cyan-glow);
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-content {
+    padding-top: 10px;
+    flex: 1;
+  }
+
+  .step-title {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: #fff;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  .step-body {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.9;
+  }
+
+  /* ── SAMPLE CIRCUIT ── */
+  .circuit-demo {
+    margin-top: 40px;
+    background: var(--bg2);
+    border: 1px solid rgba(0,245,255,0.15);
+    padding: 40px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .circuit-demo::before {
+    content: 'SAMPLE CIRCUIT';
+    position: absolute;
+    top: 16px; right: 20px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    color: var(--text-dim);
+  }
+
+  .circuit-svg-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .circuit-svg-wrap svg {
+    min-width: 600px;
+    width: 100%;
+    height: auto;
+  }
+
+  /* ── TIPS ── */
+  .tips-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2px;
+    margin-top: 32px;
+  }
+
+  @media (max-width: 600px) {
+    .tips-grid { grid-template-columns: 1fr; }
+  }
+
+  .tip-card {
+    background: var(--bg2);
+    border: 1px solid rgba(255,0,170,0.1);
+    padding: 24px 20px;
+    transition: border-color 0.3s;
+  }
+
+  .tip-card:hover { border-color: var(--magenta); }
+
+  .tip-num {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: rgba(255,0,170,0.3);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .tip-body {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.9;
+  }
+
+  /* ── FINAL CTA ── */
+  .final-cta {
+    text-align: center;
+    padding: 100px 24px;
+    position: relative;
+  }
+
+  .final-cta-title {
+    font-family: var(--title);
+    font-size: clamp(22px, 5vw, 48px);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 30px var(--cyan-glow);
+    margin-bottom: 24px;
+    line-height: 1.2;
+  }
+
+  .final-cta-sub {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+    margin-bottom: 48px;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .divider hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+  }
+
+  /* ── ANIM ── */
+  @keyframes flow {
+    0% { stroke-dashoffset: 1000; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  @keyframes blink-node {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  @keyframes glow-bulb {
+    0%, 100% { filter: drop-shadow(0 0 4px #ffe600) drop-shadow(0 0 12px #ffe600); }
+    50% { filter: drop-shadow(0 0 12px #ffe600) drop-shadow(0 0 30px #ffe60088); }
+  }
+
+  .wire-anim {
+    stroke-dasharray: 1000;
+    animation: flow 3s linear infinite;
+  }
+
+  .node-pulse { animation: blink-node 2s ease-in-out infinite; }
+  .bulb-glow { animation: glow-bulb 2s ease-in-out infinite; }
+
+  /* fade in on load */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-circuit-bg">
+    <svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <filter id="glow-bg">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g stroke="#00f5ff" stroke-width="1" fill="none" filter="url(#glow-bg)">
+        <line x1="0" y1="100" x2="300" y2="100"/>
+        <line x1="300" y1="100" x2="300" y2="300"/>
+        <line x1="300" y1="300" x2="600" y2="300"/>
+        <line x1="600" y1="300" x2="600" y2="150"/>
+        <line x1="600" y1="150" x2="900" y2="150"/>
+        <line x1="900" y1="150" x2="900" y2="400"/>
+        <line x1="900" y1="400" x2="1200" y2="400"/>
+        <line x1="100" y1="500" x2="400" y2="500"/>
+        <line x1="400" y1="500" x2="400" y2="200"/>
+        <line x1="700" y1="50" x2="700" y2="450"/>
+        <line x1="500" y1="450" x2="1000" y2="450"/>
+        <circle cx="300" cy="100" r="4" fill="#00f5ff"/>
+        <circle cx="600" cy="300" r="4" fill="#00f5ff"/>
+        <circle cx="900" cy="150" r="4" fill="#00f5ff"/>
+        <circle cx="400" cy="500" r="4" fill="#ff00aa"/>
+        <circle cx="700" cy="300" r="4" fill="#ff00aa"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="hero-badge">COGNITIVE CIRCUIT — HOW TO USE</div>
+  <h1 class="hero-title">思考を<span>回路</span>として<br>描く</h1>
+  <p class="hero-sub">VISUALIZE YOUR COGNITION AS AN ELECTRICAL CIRCUIT</p>
+  <p class="hero-desc">
+    頭の中にあるけど、うまく説明できないものがある。<br>
+    このツールは、その「見えているが翻訳できない何か」を<br>
+    電気回路のかたちにして、外に出すための場所です。
+  </p>
+  <a href="https://cognitive-circuit-glow.lovable.app/" target="_blank" class="cta-btn">→ ツールを開く</a>
+  <div class="scroll-hint">▼ SCROLL</div>
+</div>
+
+<!-- WHAT IS -->
+<section class="fade-in">
+  <div class="section-label">01 — WHAT IS THIS</div>
+  <h2 class="section-title">これは何か</h2>
+  <p style="font-size:14px; color:var(--text-dim); line-height:2; margin-bottom:8px;">
+    自分の思考を「電気回路」として描くツールです。<br>
+    バッテリー（源泉）から配線を伸ばし、電球（目標）を点灯させる。<br>
+    その間に、アイデア・感情・場所・行動・抵抗を置いていく。
+  </p>
+  <div class="what-grid">
+    <div class="what-card">
+      <span class="what-card-icon">🧠</span>
+      <div class="what-card-title">思考の可視化</div>
+      <div class="what-card-body">言語化できなかったものを図として外に出す</div>
+    </div>
+    <div class="what-card">
+      <span class="what-card-icon">⚡</span>
+      <div class="what-card-title">構造の発見</div>
+      <div class="what-card-body">つながりと断絶、エネルギーの流れが見える</div>
+    </div>
+    <div class="what-card">
+      <span class="what-card-icon">🔁</span>
+      <div class="what-card-title">対話のきっかけ</div>
+      <div class="what-card-body">回路を見せることで、説明より伝わる</div>
+    </div>
+    <div class="what-card">
+      <span class="what-card-icon">📍</span>
+      <div class="what-card-title">現在地の確認</div>
+      <div class="what-card-body">今、自分はどこにいるのかが浮かび上がる</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- PARTS -->
+<section class="fade-in">
+  <div class="section-label">02 — PARTS</div>
+  <h2 class="section-title">登場するパーツ</h2>
+  <div class="parts-list">
+    <div class="part-row">
+      <div class="part-icon-cell battery">🔋</div>
+      <div class="part-name-cell"><span class="part-name battery">BATTERY</span></div>
+      <div class="part-desc-cell">自分のエネルギー源。動機、好きなこと、原動力。「問い」でもいい。</div>
+    </div>
+    <div class="part-row">
+      <div class="part-icon-cell bulb">💡</div>
+      <div class="part-name-cell"><span class="part-name bulb">BULB</span></div>
+      <div class="part-desc-cell">実現したいこと。目標、アウトプット、到達点。まだ点灯していなくていい。</div>
+    </div>
+    <div class="part-row">
+      <div class="part-icon-cell node">◆</div>
+      <div class="part-name-cell"><span class="part-name node">NODE</span></div>
+      <div class="part-desc-cell">その間にあるもの。アイデア、場所、人、感情、行動。混在していい。</div>
+    </div>
+    <div class="part-row">
+      <div class="part-icon-cell resist">⚡</div>
+      <div class="part-name-cell"><span class="part-name resist">RESIST</span></div>
+      <div class="part-desc-cell">障害になっているもの。不安、時間、組織の論理。消えなくていい。</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- STEPS -->
+<section class="fade-in">
+  <div class="section-label">03 — HOW TO USE</div>
+  <h2 class="section-title">やること、3ステップ</h2>
+  <div class="steps-list">
+    <div class="step-item">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <div class="step-title">バッテリーに「エネルギー源」を書く</div>
+        <div class="step-body">今の自分を動かしているものは何か。<br>「違和感」「問い」「好奇心」でも構いません。正解はありません。</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <div class="step-title">電球に「実現したいこと」を書く</div>
+        <div class="step-body">到達したい状態、作りたいもの、変えたいこと。<br>曖昧でも、まだ言葉になっていなくても置いてみる。</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <div class="step-title">ノードと抵抗で間をつなぐ</div>
+        <div class="step-body">バッテリーから電球への道筋を、自分の言葉で埋めていく。<br>抵抗（障害）も正直に置く。それが今の回路の実態です。</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 16px; padding: 16px 24px; background: rgba(0,245,255,0.05); border-left: 2px solid var(--cyan);">
+    <span style="font-family: var(--mono); font-size: 11px; color: var(--cyan); letter-spacing: 0.2em;">所要時間</span>
+    <span style="font-size: 13px; color: var(--text-dim); margin-left: 16px;">5〜15分</span>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- SAMPLE CIRCUIT -->
+<section class="fade-in">
+  <div class="section-label">04 — SAMPLE CIRCUIT</div>
+  <h2 class="section-title">ある公務員の回路</h2>
+  <p style="font-size:13px; color:var(--text-dim); line-height:2; margin-bottom:32px;">
+    17年間、公園や公共空間に関わってきた公務員の思考回路。<br>
+    バッテリーは「問い」、電球はまだ完全には点灯していない。
+  </p>
+  <div class="circuit-demo">
+    <div class="circuit-svg-wrap">
+      <svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow-cyan">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow-yellow">
+            <feGaussianBlur stdDeviation="5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow-mag">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow-green">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#00f5ff" opacity="0.7"/>
+          </marker>
+          <marker id="arrow-mag" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#ff00aa" opacity="0.7"/>
+          </marker>
+        </defs>
+
+        <!-- BACKGROUND GRID -->
+        <g stroke="rgba(0,245,255,0.04)" stroke-width="1">
+          <line x1="0" y1="60" x2="700" y2="60"/>
+          <line x1="0" y1="120" x2="700" y2="120"/>
+          <line x1="0" y1="180" x2="700" y2="180"/>
+          <line x1="0" y1="240" x2="700" y2="240"/>
+          <line x1="0" y1="300" x2="700" y2="300"/>
+          <line x1="100" y1="0" x2="100" y2="340"/>
+          <line x1="200" y1="0" x2="200" y2="340"/>
+          <line x1="300" y1="0" x2="300" y2="340"/>
+          <line x1="400" y1="0" x2="400" y2="340"/>
+          <line x1="500" y1="0" x2="500" y2="340"/>
+          <line x1="600" y1="0" x2="600" y2="340"/>
+        </g>
+
+        <!-- MAIN WIRE TOP PATH -->
+        <polyline points="90,170 160,170 160,90 260,90 260,130 360,130 360,90 460,90 460,130 560,130 560,170 630,170"
+          stroke="#00f5ff" stroke-width="1.5" fill="none" opacity="0.4"
+          stroke-dasharray="8,4" marker-end="url(#arrow)"/>
+
+        <!-- MAIN WIRE BOTTOM PATH -->
+        <polyline points="90,170 160,170 160,250 260,250 260,210 360,210 360,250 460,250 460,210 560,210 560,170 630,170"
+          stroke="#00f5ff" stroke-width="1.5" fill="none" opacity="0.4"
+          stroke-dasharray="8,4"/>
+
+        <!-- ANIMATED FLOW LINE -->
+        <polyline points="90,170 160,170 160,90 260,90 260,130 360,130 360,90 460,90 460,130 560,130 560,170 630,170"
+          stroke="#00f5ff" stroke-width="2" fill="none" opacity="0.9"
+          stroke-dasharray="20,480" class="wire-anim" filter="url(#glow-cyan)"/>
+
+        <!-- RESIST WIRES (magenta) -->
+        <line x1="260" y1="130" x2="260" y2="185" stroke="#ff00aa" stroke-width="1" opacity="0.5" stroke-dasharray="4,3"/>
+        <line x1="360" y1="170" x2="360" y2="185" stroke="#ff00aa" stroke-width="1" opacity="0.5" stroke-dasharray="4,3"/>
+        <line x1="460" y1="130" x2="460" y2="185" stroke="#ff00aa" stroke-width="1" opacity="0.5" stroke-dasharray="4,3"/>
+
+        <!-- BATTERY (left) -->
+        <g filter="url(#glow-green)">
+          <rect x="20" y="148" width="70" height="44" rx="4" fill="rgba(0,255,136,0.1)" stroke="#00ff88" stroke-width="1.5"/>
+          <text x="55" y="164" text-anchor="middle" font-family="'Share Tech Mono'" font-size="7" fill="#00ff88" letter-spacing="1">BATTERY</text>
+          <text x="55" y="178" text-anchor="middle" font-family="'Noto Sans JP'" font-size="8" fill="#00ff88">公共空間への</text>
+          <text x="55" y="190" text-anchor="middle" font-family="'Noto Sans JP'" font-size="8" fill="#00ff88">違和感・問い</text>
+        </g>
+        <!-- battery terminals -->
+        <line x1="90" y1="165" x2="95" y2="165" stroke="#00ff88" stroke-width="2"/>
+        <line x1="90" y1="175" x2="95" y2="175" stroke="#00ff88" stroke-width="1"/>
+
+        <!-- NODE 1: 地域の声を聞く -->
+        <g class="node-pulse" filter="url(#glow-cyan)">
+          <rect x="205" y="68" width="110" height="44" rx="2" fill="rgba(0,245,255,0.08)" stroke="#00f5ff" stroke-width="1"/>
+          <text x="260" y="86" text-anchor="middle" font-family="'Share Tech Mono'" font-size="6" fill="#00f5ff" letter-spacing="1">NODE</text>
+          <text x="260" y="100" text-anchor="middle" font-family="'Noto Sans JP'" font-size="8.5" fill="#c8d8e8">地域の声を聞く場</text>
+        </g>
+
+        <!-- NODE 2: ZINEに書く -->
+        <g class="node-pulse" style="animation-delay:0.5s" filter="url(#glow-cyan)">
+          <rect x="305" y="108" width="110" height="44" rx="2" fill="rgba(0,245,255,0.08)" stroke="#00f5ff" stroke-width="1"/>
+          <text x="360" y="126" text-anchor="middle" font-family="'Share Tech Mono'" font-size="6" fill="#00f5ff" letter-spacing="1">NODE</text>
+          <text x="360" y="140" text-anchor="middle" font-family="'Noto Sans JP'" font-size="8.5" fill="#c8d8e8">ZINEに書いて整理</text>
+        </g>
+
+        <!-- NODE 3: 現場を歩く -->
+        <g class="node-pulse" style="animation-delay:1s" filter="url(#glow-cyan)">
+          <rect x="405" y="68" width="110" height="44" rx="2" fill="rgba(0,245,255,0.08)" stroke="#00f5ff" stroke-width="1"/>
+          <text x="460" y="86" text-anchor="middle" font-family="'Share Tech Mono'" font-size="6" fill="#00f5ff" letter-spacing="1">NODE</text>
+          <text x="460" y="100" text-anchor="middle" font-family="'Noto Sans JP'" font-size="8.5" fill="#c8d8e8">現場を歩いて観察</text>
+        </g>
+
+        <!-- RESIST 1 -->
+        <g filter="url(#glow-mag)">
+          <rect x="218" y="188" width="84" height="36" rx="2" fill="rgba(255,0,170,0.08)" stroke="#ff00aa" stroke-width="1"/>
+          <text x="260" y="202" text-anchor="middle" font-family="'Share Tech Mono'" font-size="6" fill="#ff00aa" letter-spacing="1">RESIST</text>
+          <text x="260" y="216" text-anchor="middle" font-family="'Noto Sans JP'" font-size="7.5" fill="#ff00aa">業務時間の制約</text>
+        </g>
+
+        <!-- RESIST 2 -->
+        <g filter="url(#glow-mag)">
+          <rect x="318" y="168" width="84" height="36" rx="2" fill="rgba(255,0,170,0.08)" stroke="#ff00aa" stroke-width="1"/>
+          <text x="360" y="182" text-anchor="middle" font-family="'Share Tech Mono'" font-size="6" fill="#ff00aa" letter-spacing="1">RESIST</text>
+          <text x="360" y="196" text-anchor="middle" font-family="'Noto Sans JP'" font-size="7.5" fill="#ff00aa">言語化できない</text>
+        </g>
+
+        <!-- RESIST 3 -->
+        <g filter="url(#glow-mag)">
+          <rect x="418" y="188" width="84" height="36" rx="2" fill="rgba(255,0,170,0.08)" stroke="#ff00aa" stroke-width="1"/>
+          <text x="460" y="202" text-anchor="middle" font-family="'Share Tech Mono'" font-size="6" fill="#ff00aa" letter-spacing="1">RESIST</text>
+          <text x="460" y="216" text-anchor="middle" font-family="'Noto Sans JP'" font-size="7.5" fill="#ff00aa">組織の論理</text>
+        </g>
+
+        <!-- BULB (right) -->
+        <g class="bulb-glow">
+          <circle cx="645" cy="170" r="28" fill="rgba(255,230,0,0.06)" stroke="#ffe600" stroke-width="1.5"/>
+          <text x="645" y="162" text-anchor="middle" font-family="'Share Tech Mono'" font-size="6" fill="#ffe600" letter-spacing="1">BULB</text>
+          <text x="645" y="174" text-anchor="middle" font-family="'Noto Sans JP'" font-size="7.5" fill="#ffe600">認知を共有</text>
+          <text x="645" y="185" text-anchor="middle" font-family="'Noto Sans JP'" font-size="7.5" fill="#ffe600">できる場所</text>
+          <!-- glow dot -->
+          <circle cx="645" cy="145" r="3" fill="#ffe600"/>
+          <line x1="645" y1="142" x2="645" y2="138" stroke="#ffe600" stroke-width="1"/>
+          <line x1="648" y1="143" x2="651" y2="139" stroke="#ffe600" stroke-width="1"/>
+          <line x1="642" y1="143" x2="639" y2="139" stroke="#ffe600" stroke-width="1"/>
+        </g>
+
+        <!-- STATUS -->
+        <text x="350" y="328" text-anchor="middle" font-family="'Share Tech Mono'" font-size="9" fill="rgba(0,245,255,0.5)" letter-spacing="2">
+          1/1 ACTIVE · 3 NODES · 3 RESIST · CIRCUIT INCOMPLETE
+        </text>
+      </svg>
+    </div>
+  </div>
+
+  <div style="margin-top: 24px; padding: 20px 24px; background: rgba(0,245,255,0.03); border: 1px solid rgba(0,245,255,0.1);">
+    <p style="font-family: var(--mono); font-size: 11px; color: var(--cyan); letter-spacing: 0.2em; margin-bottom: 12px;">このサンプルから読み取れること</p>
+    <ul style="list-style: none; font-size: 12px; color: var(--text-dim); line-height: 2.2;">
+      <li>→ バッテリーは「問い」でいい</li>
+      <li>→ ノードは「行動」でも「思考」でも混在していい</li>
+      <li>→ 抵抗は消えなくていい、回路の中に置いておけばいい</li>
+      <li>→ 電球が「まだ点灯していない」でも、回路として成立する</li>
+    </ul>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- TIPS -->
+<section class="fade-in">
+  <div class="section-label">05 — TIPS</div>
+  <h2 class="section-title">使うときのコツ</h2>
+  <div class="tips-grid">
+    <div class="tip-card">
+      <span class="tip-num">01</span>
+      <div class="tip-body">正解はない。きれいな回路より、ぐちゃぐちゃな回路のほうが面白い。</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-num">02</span>
+      <div class="tip-body">電球が点灯しなくても構わない。今の状態を正直に描くことが目的。</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-num">03</span>
+      <div class="tip-body">完成させなくていい。途中で止まった場所が、次の問いになる。</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- FINAL CTA -->
+<div class="final-cta fade-in">
+  <h2 class="final-cta-title">あなたの回路を<br>描いてみてください</h2>
+  <p class="final-cta-sub">使ってみた感想、直接教えてもらえると嬉しいです</p>
+  <a href="https://cognitive-circuit-glow.lovable.app/" target="_blank" class="cta-btn">→ OPEN CIRCUIT</a>
+</div>
+
+<script>
+  // fade in on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
